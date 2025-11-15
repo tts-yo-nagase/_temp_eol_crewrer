@@ -1,0 +1,325 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Role master table (system-wide, not tenant-specific)
+model Role {
+  id          String     @id @default(cuid())
+  name        String     @unique // user, powerUser, admin
+  description String
+  sortOrder   Int        @map("sort_order")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  deletedAt   DateTime?  @map("deleted_at") // 論理削除用
+  userRoles   UserRole[]
+
+  @@index([sortOrder])
+  @@map("roles")
+}
+
+// // Tenant model for multi-tenancy support
+// model Tenant {
+//   id        String    @id @default(cuid())
+//   name      String
+//   slug      String    @unique // URL-friendly identifier (e.g., "acme-corp")
+//   domain    String?   @unique // Custom domain (optional)
+//   isActive  Boolean   @default(true)
+//   createdAt DateTime  @default(now())
+//   updatedAt DateTime  @updatedAt
+//   users     User[]
+//   companies Company[]
+// }
+// テナントテーブル
+model Tenant {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at") // 論理削除用
+
+  // リレーション
+  userTenants     UserTenant[]
+  customers       Customer[]
+  products        Product[]
+  scanHistory     ScanHistory[]
+  scanSchedules   ScanSchedule[]
+  vulnerabilities Vulnerability[]
+  companies       Company[]
+  // AuditLog         AuditLog[]
+  // TenantInvitation TenantInvitation[]
+
+  @@map("tenants")
+}
+
+// ユーザー・テナント中間テーブル（多対多）
+model UserTenant {
+  id              String   @id @default(cuid())
+  userId          String   @map("user_id")
+  tenantId        String   @map("tenant_id")
+  role            String   @default("user") // 'admin', 'tenant-admin', 'power-user', 'user'
+  isCurrentTenant Boolean  @default(false) @map("is_current_tenant") // 現在選択中のテナント
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // リレーション
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tenantId])
+  @@index([userId])
+  @@map("user_tenants")
+}
+
+// Company model (from backend)
+// TO BE DELETED: This model will be removed in future versions.
+model Company {
+  id        String    @id @default(cuid())
+  name      String
+  code      String    @unique
+  address   String?
+  phone     String?
+  tenantId  String    @map("tenant_id") // Foreign key to Tenant
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at") // 論理削除用
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("companies")
+}
+
+// User-Role junction table (many-to-many relationship)
+model UserRole {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  roleId    String   @map("role_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+  @@map("user_roles")
+}
+
+// User model (from frontend, includes all fields needed by both frontend and backend)
+model User {
+  id            String       @id @default(cuid())
+  name          String?
+  email         String?
+  emailVerified DateTime?    @map("email_verified")
+  image         String?
+  password      String? // For credential-based login
+  isActive      Boolean      @default(true) @map("is_active")
+  tenantId      String       @map("tenant_id") // Foreign key to Tenant
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  deletedAt     DateTime?    @map("deleted_at") // 論理削除用
+  accounts      Account[]
+  sessions      Session[]
+  userRoles     UserRole[] // Many-to-many relation with Role
+  userTenants   UserTenant[] // Many-to-many relation with Tenant
+
+  @@unique([email, tenantId]) // Email must be unique within a tenant
+  @@index([tenantId])
+  @@map("users")
+}
+
+// NextAuth models (from frontend)
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ====================================
+// ビジネスデータテーブル（マルチテナント対応）
+// ====================================
+
+// 自動スキャンスケジュールテーブル
+model ScanSchedule {
+  id          String  @id @default(cuid())
+  tenantId    String  @map("tenant_id")
+  name        String // スケジュール名
+  description String? // 説明
+  isActive    Boolean @default(true) @map("is_active")
+
+  // スケジュール設定
+  scheduleType String    @map("schedule_type") // 'once', 'daily', 'weekly', 'monthly'
+  scheduledAt  DateTime? @map("scheduled_at") // 一度だけ実行の場合の日時
+  dayOfWeek    String?   @map("day_of_week") // 週1回の場合 JSON配列 "[0,1,2]" (0=日曜, 6=土曜)
+  dayOfMonth   String?   @map("day_of_month") // 月1回の場合 JSON配列 "[1,15,30]" (1-31)
+  timeOfDay    String    @map("time_of_day") // 実行時刻 "HH:MM" 形式
+
+  // スキャン対象設定
+  targetType        String  @default("all") @map("target_type") // 'all', 'customers', 'products'
+  targetCustomerIds String? @map("target_customer_ids") // JSON配列 (CUID形式)
+  targetProductIds  String? @map("target_product_ids") // JSON配列 (CUID形式)
+
+  // 実行状態
+  lastRunAt DateTime? @map("last_run_at")
+  nextRunAt DateTime? @map("next_run_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at") // 論理削除用
+
+  // リレーション
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, isActive])
+  @@index([nextRunAt])
+  @@map("scan_schedules")
+}
+
+// 顧客マスタテーブル
+model Customer {
+  id           String    @id @default(cuid())
+  tenantId     String    @map("tenant_id") // マルチテナント対応
+  customerName String    @map("customer_name")
+  contactEmail String?   @map("contact_email")
+  contactPhone String?   @map("contact_phone")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at") // 論理削除用
+
+  // リレーション
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  productVersions ProductVersion[]
+
+  @@unique([tenantId, customerName]) // テナント内で顧客名は一意
+  @@map("customers")
+}
+
+// 製品テーブル
+model Product {
+  id          String    @id @default(cuid())
+  tenantId    String    @map("tenant_id") // マルチテナント対応
+  productName String    @map("product_name")
+  vendorName  String    @map("vendor_name")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at") // 論理削除用
+
+  // リレーション
+  tenant   Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  versions ProductVersion[]
+
+  @@unique([tenantId, productName, vendorName]) // テナント内で製品名+ベンダ名は一意
+  @@map("products")
+}
+
+// 製品バージョンテーブル
+model ProductVersion {
+  id         String    @id @default(cuid())
+  productId  String    @map("product_id")
+  version    String
+  customerId String?   @map("customer_id")
+  memo       String?   @db.Text // メモ欄
+
+  // EOL情報
+  eolDate        DateTime? @map("eol_date") // サポート終了日
+  eolStatus      String?   @map("eol_status") // 'active', 'deprecated', 'eol', 'unknown'
+  eolSourceUrl   String?   @map("eol_source_url") // EOL情報の取得元URL
+  eolLastChecked DateTime? @map("eol_last_checked") // 最後にEOL情報を確認した日時
+
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at") // 論理削除用
+
+  // リレーション
+  product     Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  customer    Customer?     @relation(fields: [customerId], references: [id])
+  scanHistory ScanHistory[]
+
+  @@unique([productId, version, customerId]) // 同一製品内で同一バージョン+顧客の組み合わせは一意
+  @@index([productId])
+  @@index([customerId])
+  @@index([eolDate]) // EOL日付でのクエリ最適化
+  @@index([eolStatus]) // ステータスでのフィルタリング最適化
+  @@map("product_versions")
+}
+
+// 脆弱性スキャン履歴テーブル
+model ScanHistory {
+  id                   String    @id @default(cuid())
+  tenantId             String    @map("tenant_id") // マルチテナント対応
+  productVersionId     String    @map("product_version_id")
+  scanDate             DateTime  @default(now()) @map("scan_date")
+  status               String // 'completed', 'failed', 'in_progress'
+  vulnerabilitiesFound Int       @default(0) @map("vulnerabilities_found")
+  eolDate              DateTime? @map("eol_date")
+  sourceData           Json?     @map("source_data") // EOL情報の取得元データ (URL、APIレスポンスなど)
+
+  // リレーション
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  productVersion  ProductVersion  @relation(fields: [productVersionId], references: [id])
+  vulnerabilities Vulnerability[]
+
+  @@map("scan_history")
+}
+
+// 脆弱性詳細テーブル
+model Vulnerability {
+  id            String    @id @default(cuid())
+  tenantId      String    @map("tenant_id") // マルチテナント対応
+  scanId        String    @map("scan_id")
+  cveId         String?   @map("cve_id")
+  severity      String? // 'critical', 'high', 'medium', 'low'
+  description   String?
+  publishedDate DateTime? @map("published_date")
+  cvssScore     Float?    @map("cvss_score")
+  sourceData    Json?     @map("source_data") // 脆弱性情報の取得元データ (URL、APIレスポンスなど)
+
+  // リレーション
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  scanHistory ScanHistory @relation(fields: [scanId], references: [id])
+
+  @@map("vulnerabilities")
+}

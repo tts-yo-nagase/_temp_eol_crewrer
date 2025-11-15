@@ -1,0 +1,35 @@
+name: App Build
+
+on: workflow_dispatch
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+    - name: ACR Login
+      run: az acr login --name ${{ secrets.AZURE_REGISTRY_NAME }}
+    - name: frontend build and push
+      run: |
+        BASE=${{ secrets.AZURE_REGISTRY_NAME }}.azurecr.io/eol-info-clawler/frontend
+        TAG1=${BASE}:${{ github.sha }}
+        TAG2=${BASE}:latest
+        docker build -t $TAG1 -t $TAG2 -f ./frontend/Dockerfile .
+        docker push -a $BASE
+    - name: backend build and push
+      run: |
+        BASE=${{ secrets.AZURE_REGISTRY_NAME }}.azurecr.io/eol-info-clawler/backend
+        TAG1=${BASE}:${{ github.sha }}
+        TAG2=${BASE}:latest
+        docker build -t $TAG1 -t $TAG2 -f ./backend/Dockerfile .
+        docker push -a $BASE

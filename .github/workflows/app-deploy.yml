@@ -1,0 +1,50 @@
+name: App Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      option:
+        required: true
+        type: choice
+        description: "deploy option"
+        default: base
+        options:
+          - base
+          - waf
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  RESOURCE_GROUP: ${{ secrets.RESOURCE_GROUP }}
+  CONTAINER_REGISTRY_NAME: ${{ secrets.AZURE_REGISTRY_NAME }}
+  POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+  POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+  AZURE_AD_CLIENT_ID: ${{ secrets.AZURE_AD_CLIENT_ID }}
+  AZURE_AD_TENANT_ID: ${{ secrets.AZURE_AD_TENANT_ID }}
+  AZURE_AD_CLIENT_SECRET: ${{ secrets.AZURE_AD_CLIENT_SECRET }}
+  NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+  param_path: |-
+    ${{ fromJson('{
+      "base": "iac/base.bicepparam",
+      "waf": "iac/waf.bicepparam"
+    }')[inputs.option]}}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+    - name: Deploy to Azure
+      run: |
+        az deployment group create \
+          --resource-group $RESOURCE_GROUP \
+          --name  gha-${{ github.sha }} \
+          --parameters ${{ env.param_path }}

@@ -1,0 +1,159 @@
+# Cursor Rules for App Template Project
+
+## Project Structure
+
+This project is organized as follows:
+
+- `frontend/`: Next.js 15 + TypeScript frontend
+- `backend/`: NestJS + TypeScript backend
+
+## Tech Stack
+
+### Frontend (frontend/)
+
+- **Framework**: Next.js 15 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **UI Components**: shadcn/ui
+- **Authentication**: NextAuth.js
+- **Database**: Prisma ORM
+- **Testing**: Jest
+- **Storybook**: Component documentation
+
+### Backend (backend/)
+
+- **Framework**: NestJS
+- **Language**: TypeScript
+- **Database**: Prisma ORM
+- **Testing**: Jest
+
+## Development Guidelines
+
+### Coding Standards
+
+1. **TypeScript**: Use strict type definitions
+2. **ESLint**: Follow configured rules
+3. **Prettier**: Utilize automatic formatting
+4. **Naming Conventions**:
+   - File names: kebab-case
+   - Component names: PascalCase
+   - Variables/Functions: camelCase
+   - Constants: UPPER_SNAKE_CASE
+
+### Directory Structure Rules
+
+```
+frontend/
+├── src/
+│   ├── app/                 # Next.js App Router
+│   │   ├── api/            # API routes(only authentication process)
+│   │   ├── login/          # Login pages
+│   │   ├── main/           # Protected main application
+│   │   └── unauthorized/   # Unauthorized access page
+│   ├── components/          # Reusable components
+│   │   ├── ui/             # shadcn/ui components
+│   │   └── navigation/     # Navigation components
+│   ├── hooks/              # Custom hooks
+│   ├── lib/                # Utility functions
+│   ├── __server/           # Server-side logic (MSW mocks)
+│   └── types/              # Type definitions
+├── prisma/                 # Prisma configuration
+└── public/                 # Static files
+
+backend/
+├── src/
+│   ├── app.module.ts       # Main module
+│   ├── main.ts            # Entry point
+│   ├── auth/              # Authentication modules
+│   └── types/             # Type definitions
+├── prisma/                # Prisma configuration
+└── test/                  # Test files
+```
+
+### Authentication & Authorization
+
+- Uses NextAuth.js
+- Session management
+- Protected routes: `/main/*`
+- Unauthorized access handling
+
+### Database
+
+- Prisma ORM (latest version)
+- PostgreSQL support
+- Migration management
+- Seed data support
+- Performance optimized (RETURNING clauses, query optimization)
+
+### API Design
+
+- RESTful API
+- Located under `/api/` in frontend app
+- Protected endpoints: `/api/protected/*`
+- Public endpoints: `/api/public/*`
+- Health check endpoint: `/api/health`
+
+## Best Practices
+
+### New Feature Development
+
+1. **Components**: Place in `frontend/src/components/`
+2. **Pages**: Place in `frontend/src/app/` (App Router)
+3. **API Routes**: Place in `frontend/src/app/api/`
+4. **Type Definitions**: Place in `frontend/src/types/`
+5. **Utilities**: Place in `frontend/src/lib/`
+6. **Backend Logic**: Place in `backend/src/`
+
+### Testing
+
+1. **Unit Tests**: `*.test.ts` or `*.spec.ts`
+2. **E2E Tests**: `test/` directory
+3. **Storybook**: `*.stories.tsx` for component documentation
+
+### Performance
+
+1. **Next.js**: Use appropriate dynamic imports
+2. **Images**: Use next/image component
+3. **Fonts**: Use next/font
+4. **CSS**: Verify Tailwind purge configuration
+
+### Security
+
+1. **Authentication**: Proper NextAuth.js configuration
+2. **Environment Variables**: Manage with `.env.local`
+3. **CORS**: Appropriate configuration
+4. **CSP**: Content Security Policy setup
+
+## Prohibited Practices
+
+- Avoid using `any` type
+- No direct DOM manipulation
+- No inline styles (use Tailwind CSS)
+- Remove unused imports
+- No console.log in production
+
+## Dependency Management
+
+- Properly manage `package.json` dependencies
+- Regular security update checks
+- Remove unnecessary packages
+- **Important**: Uses React 19, `.npmrc` configured with `legacy-peer-deps=true`
+- Avoid dependency conflicts during `npm install`
+
+## Debugging and Error Handling
+
+- Proper error boundary setup
+- Unified logging output
+- Multi-language error message support
+- Use custom error classes in `frontend/src/__server/errors/`
+
+## Project-Specific Features
+
+- Mock Service Worker (MSW) integration for development
+- Comprehensive navigation system with sidebar
+- Theme support (light/dark mode)
+- Dashboard layouts and components
+- Company and user management modules
+- Chartjs integration for data visualization
+
+Follow these guidelines to maintain a consistent and high-quality codebase.

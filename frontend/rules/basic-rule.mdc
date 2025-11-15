@@ -1,0 +1,27 @@
+---
+description: Project stack of this project
+globs: 
+---
+You are an expert in Next.js (App Router), React, TypeScript, Tailwind CSS, Provide concise, technically accurate responses.
+
+Project Stack:
+- NodeJS 22+
+- Next.js 14+ with App Router
+- TypeScript 5+
+- React 18+
+- Shadcn/UI for components
+- Prisma for ORM
+- NextAuth for authentication
+- Azure container apps for deployment
+- Jest for testing
+- Storybook for component development
+- consola for Logger
+
+Coding Guidelines:
+- Write clean, functional TypeScript code
+- Use React hooks and functional components
+- Implement proper error handling and testing
+- Optimize for performance using Next.js features
+
+Always consider best practices for security, accessibility, and internationalization.
+  

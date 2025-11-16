@@ -68,19 +68,32 @@ export interface UserTenant {
 export const apiClient = {
   // User authentication
   async validateUser(credentials: AuthUserDto) {
-    const response = await fetch(`${API_URL}/users/auth/validate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(credentials),
-    });
+    console.log('🔍 Validating user:', credentials.email, 'API_URL:', API_URL);
+    
+    try {
+      const response = await fetch(`${API_URL}/users/auth/validate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credentials),
+      });
 
-    if (!response.ok) {
+      console.log('📡 Validate response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Validate failed:', response.status, errorText);
+        return null;
+      }
+
+      const user = await response.json();
+      console.log('✅ User validated:', user);
+      return user;
+    } catch (error) {
+      console.error('❌ Validate error:', error);
       return null;
     }
-
-    return response.json();
   },
 
   async upsertUser(data: { email: string; name?: string; image?: string }) {

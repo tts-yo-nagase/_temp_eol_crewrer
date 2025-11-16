@@ -4,16 +4,14 @@ import { getToken } from "next-auth/jwt";
 export async function GET(request: NextRequest) {
   try {
     console.log("Environment:", process.env.NODE_ENV);
-    console.log("NEXTAUTH_SECRET exists:", !!process.env.NEXTAUTH_SECRET);
+    console.log("AUTH_SECRET exists:", !!process.env.AUTH_SECRET);
 
     // Try with different secureCookie settings
     const token = await getToken({
       req: request,
       secret: process.env.NEXTAUTH_SECRET,
-      secureCookie: process.env.NODE_ENV === "production",
+      // secureCookie を指定しない（自動検出させる）
     });
-
-    console.log("Token found:", !!token);
 
     if (!token) {
       const allCookies = request.cookies.getAll();
@@ -23,7 +21,8 @@ export async function GET(request: NextRequest) {
         error: "No token found",
         debug: {
           cookieNames: allCookies.map(c => c.name),
-          env: process.env.NODE_ENV
+          env: process.env.NODE_ENV,
+          vercelEnv: process.env.VERCEL_ENV
         }
       }, { status: 401 });
     }

@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
   try {
     // サーバーサイドで環境変数を取得
-    const apiUrl = process.env.API_URL;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL;
 
     // 設定オブジェクトを構築
     const config = {

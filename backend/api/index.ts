@@ -15,6 +15,12 @@ async function initializeApp() {
       logger: ['error', 'warn', 'log'],
     });
 
+    // CORS設定
+    app.enableCors({
+      origin: process.env.FRONTEND_URL || '*',
+      credentials: true,
+    });
+
     app.useGlobalPipes(
       new ValidationPipe({
         transform: true,

@@ -7,9 +7,9 @@
     "cleanup": "bash scripts/cleanup.sh",
     "lint": "pnpm --filter backend run lint && pnpm --filter frontend run lint",
     "test": "pnpm --filter backend run test && pnpm --filter frontend run test",
-    "prisma:generate": "prisma generate --schema=./prisma/schema.prisma",
-    "prisma:migrate": "prisma migrate dev --schema=./prisma/schema.prisma",
-    "prisma:seed": "ts-node --transpile-only prisma/seed.ts"
+    "prisma:generate": "prisma generate --schema=./backend/prisma/schema.prisma",
+    "prisma:migrate": "prisma migrate dev --schema=./backend/prisma/schema.prisma",
+    "prisma:seed": "ts-node --transpile-only backend/prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0",

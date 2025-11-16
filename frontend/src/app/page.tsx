@@ -83,7 +83,7 @@ export default function Home() {
         <div className="flex flex-wrap justify-center gap-2 mb-4">
           <Link href="/login"><Button>Login</Button></Link>
           <Link href="/main"><Button variant="secondary">Dashboard</Button></Link>
-          <a href="http://localhost:3010/api-docs" target="_blank" rel="noopener noreferrer"><Button variant="outline">API Docs</Button></a>
+          <a href={`${process.env.NEXT_PUBLIC_API_URL || 'https://temp-eol-crewrer-backend.vercel.app'}/api-docs`} target="_blank" rel="noopener noreferrer"><Button variant="outline">API Docs</Button></a>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left mt-6">
           <div>
@@ -112,7 +112,7 @@ export default function Home() {
         </div>
         <div className="mt-6 text-xs text-muted-foreground">
           <p>Quick Start: <b>pnpm install</b> → <b>docker compose up -d</b> → <b>pnpm dev</b></p>
-          <p>API Docs: <a href="http://localhost:3010/api-docs" className="underline" target="_blank" rel="noopener noreferrer">http://localhost:3010/api-docs</a></p>
+          <p>API Docs: <a href={`${process.env.NEXT_PUBLIC_API_URL || 'https://temp-eol-crewrer-backend.vercel.app'}/api-docs`} className="underline" target="_blank" rel="noopener noreferrer">{process.env.NEXT_PUBLIC_API_URL || 'https://temp-eol-crewrer-backend.vercel.app'}/api-docs</a></p>
         </div>
       </div>
 

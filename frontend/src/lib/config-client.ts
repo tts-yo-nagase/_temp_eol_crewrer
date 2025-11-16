@@ -60,7 +60,7 @@ export async function getAppConfig(
     }
 
     return {
-      apiUrl: "http://localhost:3010",
+      apiUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3010",
       timestamp: new Date().toISOString(),
     };
   }

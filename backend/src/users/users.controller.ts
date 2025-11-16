@@ -233,6 +233,7 @@ export class UsersController {
   @ApiResponse({ status: 429, description: 'Too many requests' })
   async validateUser(@Body() authUserDto: AuthUserDto) {
     try {
+      console.log('⭐️UsersController.validateUser called with:', authUserDto);
       const user = await this.usersService.validateUser(authUserDto);
       if (!user) {
         throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);

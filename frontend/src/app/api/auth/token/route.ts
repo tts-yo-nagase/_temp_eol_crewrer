@@ -4,16 +4,17 @@ import { getToken } from "next-auth/jwt";
 export async function GET(request: NextRequest) {
   try {
     console.log("Environment:", process.env.NODE_ENV);
-    console.log("AUTH_SECRET exists:", !!process.env.AUTH_SECRET);
-    console.log(process.env.AUTH_SECRET);
+    console.log("NEXTAUTH_SECRET exists:", !!process.env.NEXTAUTH_SECRET);
 
-    // Try with different secureCookie settings
+    // NextAuthのJWTトークンを取得
+    // secureCookie を環境に応じて明示的に指定
     const token = await getToken({
       req: request,
-      secret: process.env.AUTH_SECRET,
-      // secureCookie を指定しない（自動検出させる）
+      secret: process.env.NEXTAUTH_SECRET,
+      secureCookie: process.env.NODE_ENV === "production",
     });
-    console.log("Token retrieved:", token);
+
+    console.log("Token found:", !!token);
 
     if (!token) {
       const allCookies = request.cookies.getAll();
@@ -24,11 +25,13 @@ export async function GET(request: NextRequest) {
         debug: {
           cookieNames: allCookies.map(c => c.name),
           env: process.env.NODE_ENV,
-          vercelEnv: process.env.VERCEL_ENV
+          hasSecret: !!process.env.NEXTAUTH_SECRET,
+          secureCookie: process.env.NODE_ENV === "production",
         }
       }, { status: 401 });
     }
 
+    // トークン全体を返す（id, email, roles, tenantIdなどが含まれる）
     return NextResponse.json({ token });
   } catch (error) {
     console.error("Token extraction error:", error);

@@ -89,6 +89,19 @@ export const authConfig: NextAuthConfig = {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === 'production'
+        ? '__Secure-authjs.session-token'
+        : 'authjs.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'none', 
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+  },
   jwt: {
     // Issue signed JWS (HS256)
     async encode({ token, secret, maxAge }) {

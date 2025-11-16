@@ -5,11 +5,12 @@ export async function GET(request: NextRequest) {
   try {
     console.log("Environment:", process.env.NODE_ENV);
     console.log("AUTH_SECRET exists:", !!process.env.AUTH_SECRET);
+    console.log(process.env.AUTH_SECRET);
 
     // Try with different secureCookie settings
     const token = await getToken({
       req: request,
-      secret: process.env.NEXTAUTH_SECRET,
+      secret: process.env.AUTH_SECRET,
       // secureCookie を指定しない（自動検出させる）
     });
 

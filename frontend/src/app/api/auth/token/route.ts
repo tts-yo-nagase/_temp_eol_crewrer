@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
       secret: process.env.AUTH_SECRET,
       // secureCookie を指定しない（自動検出させる）
     });
+    console.log("Token retrieved:", token);
 
     if (!token) {
       const allCookies = request.cookies.getAll();

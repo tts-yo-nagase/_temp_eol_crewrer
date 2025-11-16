@@ -15,12 +15,17 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 @Module({
   imports: [
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000, // 60 seconds
-        limit: 100 // 100 requests per ttl (default for most endpoints)
-      }
-    ]),
+    // サーバーレス環境ではThrottlerを無効化（各リクエストが独立したインスタンスで実行されるため）
+    ...(process.env.VERCEL !== '1'
+      ? [
+          ThrottlerModule.forRoot([
+            {
+              ttl: 60000, // 60 seconds
+              limit: 100 // 100 requests per ttl (default for most endpoints)
+            }
+          ])
+        ]
+      : []),
     PrismaModule,
     PassportModule,
     JwtModule.register({ secret: process.env.JWT_SECRET }),
@@ -33,10 +38,15 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
   providers: [
     JwtStrategy,
     AppService,
-    {
-      provide: APP_GUARD,
-      useClass: ThrottlerGuard
-    },
+    // Vercel以外の環境ではリクエスト制限を有効化
+    ...(process.env.VERCEL !== '1'
+      ? [
+          {
+            provide: APP_GUARD,
+            useClass: ThrottlerGuard
+          }
+        ]
+      : []),
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor
